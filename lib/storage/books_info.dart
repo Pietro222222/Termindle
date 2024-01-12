@@ -59,11 +59,12 @@ class Books {
     if (widget.text == null) {
       return;
     }
+    var chapter = widget.chapterPage * (stdout.terminalLines - 5) + (widget.selectedChapter + 1);
     var info = BookInfo(
         position: widget.text!.position,
         terminalRow: stdout.terminalLines,
         terminalColumn: stdout.terminalColumns,
-        chapter: widget.selectedChapter,
+        chapter: chapter,
         title: widget.book.Title!);
     if (books.containsKey(widget.book.Title!)) {
       books.update(widget.book.Title!, (value) => info);

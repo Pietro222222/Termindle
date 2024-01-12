@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:collection/collection.dart';
 import 'package:dart_console2/dart_console2.dart';
 import 'package:epubx/epubx.dart';
 import 'package:terminal_reader/storage/books_info.dart';
@@ -9,20 +9,23 @@ import 'package:terminal_reader/widgets/widget.dart';
 
 class ChapterSelection extends Widget {
   final EpubBook book;
-  late int selectedChapter;
   late List<EpubChapter> chapters;
+  late List<List<EpubChapter>> chapterPages;
+  int chapterPage = 0, selectedChapter = 0;
   BookText? text;
   bool isTextSelected = false;
 
   ChapterSelection(this.book) {
-    selectedChapter = 0;
     chapters = _getChapters(book.Chapters);
   }
 
   ChapterSelection.withInfo(this.book, BookInfo info) {
-    selectedChapter = info.chapter;
     chapters = _getChapters(book.Chapters);
-    text = BookText.fromInfo(chapters[selectedChapter], info);
+    chapterPage =
+        ((info.chapter - 1) / (stdout.terminalLines - 5)).floor();
+    selectedChapter = (info.chapter - 1) % (stdout.terminalLines - 5);
+
+    text = BookText.fromInfo(chapterPages[chapterPage][selectedChapter], info);
     isTextSelected = true;
   }
 
@@ -43,12 +46,14 @@ class ChapterSelection extends Widget {
     for (var list in lists) {
       chaptersFiltered.addAll(list);
     }
+
+    chapterPages = chaptersFiltered.slices(stdout.terminalLines - 5).toList();
     return chaptersFiltered;
   }
 
   void draw() {
     var chapterCount = 0;
-    for (var chapter in chapters) {
+    for (var chapter in chapterPages[chapterPage]) {
       if (selectedChapter == chapterCount) {
         console.setForegroundColor(ConsoleColor.white);
         console.setBackgroundColor(ConsoleColor.black);
@@ -77,14 +82,24 @@ class ChapterSelection extends Widget {
       case 67:
         if (isTextSelected) {
           text!.nextPage();
+        } else {
+          if (chapterPage < (chapterPages.length - 1)) {
+            chapterPage++;
+            selectedChapter = 0;
+          }
         }
       case 104:
       case 68:
         if (isTextSelected) {
           text!.previousPage();
+        } else {
+          if (chapterPage > 0) {
+            chapterPage--;
+            selectedChapter = 0;
+          }
         }
       case 13:
-        text = BookText(chapters[selectedChapter]);
+        text = BookText(chapterPages[chapterPage][selectedChapter]);
         if (text!.chapterText.isNotEmpty) {
           isTextSelected = true;
         }
